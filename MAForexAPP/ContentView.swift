@@ -13,7 +13,7 @@ public struct Data: Decodable
     let base: String?
     let date: String?
     let success: Bool?
-    let rates: [String: Rates]
+    let rates: [String: Rates]?
 }
 
 
@@ -54,6 +54,7 @@ let json = """
 public final class WebService : NSObject
 {
     var semaphore = DispatchSemaphore(value: 0)
+    let defaults = UserDefaults.standard
     var result = "no result"
     var urlEUR: String = ""
     var urlUSD: String = ""
@@ -76,9 +77,31 @@ public final class WebService : NSObject
         urlUSD = "https://api.apilayer.com/fixer/fluctuation?symbols=" + self.USDSymbols + "&base=USD"
         urlEUR = "https://api.apilayer.com/fixer/fluctuation?symbols=" + self.EURSymbols + "&base=EUR"
         urlGBP = "https://api.apilayer.com/fixer/fluctuation?symbols=" + self.GBPSymbols + "&base=GBP"
-        //MakeDataRequest(url: urlEUR, base: Base.EUR)
-        //MakeDataRequest(url: urlUSD, base: Base.USD)
-        //MakeDataRequest(url: urlGBP, base: Base.GBP)
+        
+        let _eur = defaults.string(forKey: "EURData")
+        if (_eur != nil)
+        {
+            let data = _eur!.data(using: .utf8)!
+            let _decoded = try! JSONDecoder().decode(Data.self, from: data)
+            self.decodedEUR = _decoded
+        }
+        let _gbp = defaults.string(forKey: "GBPData")
+        if (_gbp != nil)
+        {
+            let data = _gbp!.data(using: .utf8)!
+            let _decoded = try! JSONDecoder().decode(Data.self, from: data)
+            self.decodedGBP = _decoded
+        }
+        let _usd = defaults.string(forKey: "USDData")
+        if(_usd != nil)
+        {
+            let data = _usd!.data(using: .utf8)!
+            let _decoded = try! JSONDecoder().decode(Data.self, from: data)
+            self.decodedUSD = _decoded
+        }
+        MakeDataRequest(url: urlEUR, base: Base.EUR)
+        MakeDataRequest(url: urlUSD, base: Base.USD)
+        MakeDataRequest(url: urlGBP, base: Base.GBP)
         SetData()
     }
     
@@ -103,17 +126,32 @@ public final class WebService : NSObject
             {
             case Base.EUR:
                 do {
-                    self.decodedEUR = try! JSONDecoder().decode(Data.self, from: data)
+                    let _eur = try? JSONDecoder().decode(Data.self, from: data)
+                    if (_eur!.success != nil && _eur!.success!)
+                    {
+                        self.decodedEUR = _eur
+                        self.defaults.set(self.result, forKey: "EURData")
+                    }
                     
                 }
             case Base.USD:
                 do {
-                    self.decodedUSD = try! JSONDecoder().decode(Data.self, from: data)
+                    let _usd = try? JSONDecoder().decode(Data.self, from: data)
+                    if (_usd!.success != nil && _usd!.success!)
+                    {
+                        self.decodedUSD = _usd
+                        self.defaults.set(self.result, forKey: "USDData")
+                    }
+                    
                 }
             case Base.GBP:
                 do{
-                    self.decodedGBP = try! JSONDecoder().decode(Data.self, from: data)
-                    
+                    let _gbp = try? JSONDecoder().decode(Data.self, from: data)
+                    if (_gbp!.success != nil && _gbp!.success!)
+                    {
+                        self.decodedGBP = _gbp
+                        self.defaults.set(self.result, forKey: "GBPData")
+                    }
                 }
             }
             self.semaphore.signal()
@@ -147,7 +185,7 @@ struct Row: View{
         self.data = data
         self.key = key
         
-        if(data.rates[key]!.change! < 0)
+        if(data.rates![key]!.change! < 0)
         {
             color = Color.red
         }
@@ -158,12 +196,12 @@ struct Row: View{
         HStack
         {
             Text(data.base! + " / " + key).padding(1)
-            Text("Current \n " + (String(round(data.rates[key]!.end_rate! * 1000) / 1000)))
+            Text("Current \n " + (String(round(data.rates![key]!.end_rate! * 1000) / 1000)))
                 .padding(1)
-            Text("Change \n" + (String(data.rates[key]!.change!)))
+            Text("Change \n" + (String(data.rates![key]!.change!)))
                 .padding(1)
                 .foregroundColor(color)
-            Text("Change % \n" + String(round(data.rates[key]!.change_pct! * 100) / 100))
+            Text("Change % \n" + String(round(data.rates![key]!.change_pct! * 100) / 100))
                 .padding(1)
             .foregroundColor(color)
             
@@ -183,21 +221,21 @@ struct ContentView: View {
             let keysUSD = ["JPY","CAD","CHF"]
             let keysGBP = ["USD","JPY","AUD","CAD","CHF","HKD"]
             ForEach(keysEUR, id: \.self) { key in
-                if(service.decodedEUR != nil && service.decodedEUR!.rates[key] != nil)
+                if(service.decodedEUR != nil && service.decodedEUR!.rates![key] != nil)
                 {
                     Row(data: service.decodedEUR!, key: key)
                 }
         
             }
             ForEach(keysUSD, id: \.self) { key in
-                if(service.decodedUSD != nil && service.decodedUSD!.rates[key] != nil )
+                if(service.decodedUSD != nil && service.decodedUSD!.rates![key] != nil )
                 {
                     Row(data: service.decodedUSD!, key: key)
                 }
         
             }
             ForEach(keysGBP, id: \.self) { key in
-                if(service.decodedGBP != nil && service.decodedGBP!.rates[key] != nil)
+                if(service.decodedGBP != nil && service.decodedGBP!.rates![key] != nil)
                 {
                     Row(data: service.decodedGBP!, key: key)
                 }
