@@ -11,10 +11,12 @@ import Foundation
 // github token = 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
 public struct Data: Decodable
 {
+    
     let base: String?
     let date: String?
     let success: Bool?
     let rates: [String: Rates]?
+    var keys: Array<String>?
 }
 
 
@@ -67,6 +69,9 @@ public final class WebService : NSObject, ObservableObject
     @Published var decodedEUR: Data?
     @Published var decodedUSD: Data?
     @Published var decodedGBP: Data?
+    
+    @Published var allApiData: Array<Data>
+    var newApiData: Array<Data> = []
     let EURSymbols = "USD,JPY,GBP,AUD,CAD,NZD,CHF,HKD"
     let USDSymbols =  "JPY,CAD,CHF"
     let GBPSymbols = "USD,JPY,AUD,CAD,CHF,HKD"
@@ -81,6 +86,7 @@ public final class WebService : NSObject, ObservableObject
         self.refreshing1 = true
         self.refreshing2 = true
         self.refreshing3 = true
+        self.allApiData = []
         super.init()
         urlUSD = "https://api.apilayer.com/fixer/fluctuation?symbols=" + self.USDSymbols + "&base=USD"
         urlEUR = "https://api.apilayer.com/fixer/fluctuation?symbols=" + self.EURSymbols + "&base=EUR"
@@ -92,6 +98,7 @@ public final class WebService : NSObject, ObservableObject
             let data = _eur!.data(using: .utf8)!
             let _decoded = try! JSONDecoder().decode(Data.self, from: data)
             self.decodedEUR = _decoded
+            self.allApiData.append(_decoded)
         }
         let _gbp = defaults.string(forKey: "GBPData")
         if (_gbp != nil)
@@ -99,6 +106,7 @@ public final class WebService : NSObject, ObservableObject
             let data = _gbp!.data(using: .utf8)!
             let _decoded = try! JSONDecoder().decode(Data.self, from: data)
             self.decodedGBP = _decoded
+            self.allApiData.append(_decoded)
         }
         let _usd = defaults.string(forKey: "USDData")
         if(_usd != nil)
@@ -106,14 +114,29 @@ public final class WebService : NSObject, ObservableObject
             let data = _usd!.data(using: .utf8)!
             let _decoded = try! JSONDecoder().decode(Data.self, from: data)
             self.decodedUSD = _decoded
+            self.allApiData.append(_decoded)
         }
+        SetKeys()
         MakeDataRequest(url: urlEUR, base: Base.EUR)
         MakeDataRequest(url: urlUSD, base: Base.USD)
         MakeDataRequest(url: urlGBP, base: Base.GBP)
     }
     
+    private func SetKeys()
+    {
+        for index in allApiData.indices
+        {
+            allApiData[index].keys = []
+            for _key in allApiData[index].rates!.keys
+            {
+                allApiData[index].keys!.append(_key)
+            }
+        }
+    }
+    
     public func RefreshData()
     {
+        self.newApiData = []
         self.refreshing1 = true
         self.refreshing2 = true
         self.refreshing3 = true
@@ -140,6 +163,11 @@ public final class WebService : NSObject, ObservableObject
           }
             
             self.result = String(data: data, encoding: .utf8)!
+            let _data = try? JSONDecoder().decode(Data.self, from: data)
+            if(_data != nil)
+            {
+            self.newApiData.append(_data!)
+            }
             switch (base)
             {
             case Base.EUR:
@@ -192,6 +220,15 @@ public final class WebService : NSObject, ObservableObject
                         self.defaults.set(self.result, forKey: "GBPData")
                     }
                 }
+            }
+            if(!self.refreshing1 && !self.refreshing2 && !self.refreshing3)
+            {
+                DispatchQueue.main.async
+                {
+                    self.allApiData = self.newApiData
+                }
+                self.newApiData = []
+                self.SetKeys()
             }
             self.semaphore.signal()
             
@@ -272,9 +309,16 @@ struct ContentView: View {
             }
         List
         {
-            let keysEUR = ["USD","JPY","GBP","AUD","CAD","NZD","CHF","HKD"]
-            let keysUSD = ["JPY","CAD","CHF"]
-            let keysGBP = ["USD","JPY","AUD","CAD","CHF","HKD"]
+            
+            ForEach(service.allApiData.indices, id: \.self) { index in
+                if(service.allApiData[index].keys != nil)
+                {
+                    ForEach(service.allApiData[index].keys!, id: \.self) {key in
+                        Row(data: service.allApiData[index], key: key)
+                    }
+                }
+            }
+             /*
             ForEach(keysEUR, id: \.self) { key in
                 if(service.decodedEUR != nil && service.decodedEUR!.rates![key] != nil)
                 {
@@ -296,6 +340,7 @@ struct ContentView: View {
                 }
         
             }
+              */
             
         }
         }
