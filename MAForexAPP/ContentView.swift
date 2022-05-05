@@ -86,6 +86,8 @@ public final class WebService : NSObject, ObservableObject
         self.refreshing1 = true
         self.refreshing2 = true
         self.refreshing3 = true
+        
+        
         self.allApiData = []
         super.init()
         urlUSD = "https://api.apilayer.com/fixer/fluctuation?symbols=" + self.USDSymbols + "&base=USD"
@@ -124,12 +126,17 @@ public final class WebService : NSObject, ObservableObject
     
     private func SetKeys()
     {
-        for index in allApiData.indices
+        DispatchQueue.main.async
         {
-            allApiData[index].keys = []
-            for _key in allApiData[index].rates!.keys
+            
+        
+            for index in self.allApiData.indices
             {
-                allApiData[index].keys!.append(_key)
+                self.allApiData[index].keys = []
+                for _key in self.allApiData[index].rates!.keys
+                {
+                    self.allApiData[index].keys!.append(_key)
+                }
             }
         }
     }
@@ -166,7 +173,7 @@ public final class WebService : NSObject, ObservableObject
             let _data = try? JSONDecoder().decode(Data.self, from: data)
             if(_data != nil)
             {
-            self.newApiData.append(_data!)
+                self.newApiData.append(_data!)
             }
             switch (base)
             {
