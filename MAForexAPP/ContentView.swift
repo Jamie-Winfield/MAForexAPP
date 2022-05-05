@@ -56,7 +56,6 @@ let json = """
 
 public final class WebService : NSObject, ObservableObject
 {
-    var semaphore = DispatchSemaphore(value: 0)
     
     @Published var refreshing1: Bool = false
     @Published var refreshing2: Bool = false
@@ -66,9 +65,6 @@ public final class WebService : NSObject, ObservableObject
     var urlEUR: String = ""
     var urlUSD: String = ""
     var urlGBP: String = ""
-    @Published var decodedEUR: Data?
-    @Published var decodedUSD: Data?
-    @Published var decodedGBP: Data?
     
     @Published var allApiData: Array<Data>
     var newApiData: Array<Data> = []
@@ -99,7 +95,6 @@ public final class WebService : NSObject, ObservableObject
         {
             let data = _eur!.data(using: .utf8)!
             let _decoded = try! JSONDecoder().decode(Data.self, from: data)
-            self.decodedEUR = _decoded
             self.allApiData.append(_decoded)
         }
         let _gbp = defaults.string(forKey: "GBPData")
@@ -107,7 +102,6 @@ public final class WebService : NSObject, ObservableObject
         {
             let data = _gbp!.data(using: .utf8)!
             let _decoded = try! JSONDecoder().decode(Data.self, from: data)
-            self.decodedGBP = _decoded
             self.allApiData.append(_decoded)
         }
         let _usd = defaults.string(forKey: "USDData")
@@ -115,7 +109,6 @@ public final class WebService : NSObject, ObservableObject
         {
             let data = _usd!.data(using: .utf8)!
             let _decoded = try! JSONDecoder().decode(Data.self, from: data)
-            self.decodedUSD = _decoded
             self.allApiData.append(_decoded)
         }
         SetKeys()
@@ -155,7 +148,6 @@ public final class WebService : NSObject, ObservableObject
     
     public func MakeDataRequest(url: String, base: Base)
     {
-        semaphore = DispatchSemaphore(value: 0)
         var request = URLRequest(url: URL(string: url)!,timeoutInterval: Double.infinity)
         
         
@@ -179,51 +171,37 @@ public final class WebService : NSObject, ObservableObject
             {
             case Base.EUR:
                 do {
-                    let _eur = try? JSONDecoder().decode(Data.self, from: data)
+                    
                     DispatchQueue.main.async
                     {
                         self.refreshing1 = false
                     }
-                    if (_eur!.success != nil && _eur!.success!)
+                    if (_data!.success != nil && _data!.success!)
                     {
-                        DispatchQueue.main.async
-                        {
-                            self.decodedEUR = _eur
-                        }
                         self.defaults.set(self.result, forKey: "EURData")
                     }
                     
                 }
             case Base.USD:
                 do {
-                    let _usd = try? JSONDecoder().decode(Data.self, from: data)
                     DispatchQueue.main.async
                     {
                         self.refreshing2 = false
                     }
-                    if (_usd!.success != nil && _usd!.success!)
+                    if (_data!.success != nil && _data!.success!)
                     {
-                        DispatchQueue.main.async
-                        {
-                            self.decodedUSD = _usd
-                        }
                         self.defaults.set(self.result, forKey: "USDData")
                     }
                     
                 }
             case Base.GBP:
                 do{
-                    let _gbp = try? JSONDecoder().decode(Data.self, from: data)
                     DispatchQueue.main.async
                     {
                         self.refreshing3 = false
                     }
-                    if (_gbp!.success != nil && _gbp!.success!)
+                    if (_data!.success != nil && _data!.success!)
                     {
-                        DispatchQueue.main.async
-                        {
-                            self.decodedGBP = _gbp
-                        }
                         self.defaults.set(self.result, forKey: "GBPData")
                     }
                 }
@@ -237,14 +215,11 @@ public final class WebService : NSObject, ObservableObject
                 self.newApiData = []
                 self.SetKeys()
             }
-            self.semaphore.signal()
             
             
         }
         
         task.resume()
-        //semaphore.wait()
-        //task.cancel()
     }
     
     public func SetData()
@@ -252,7 +227,7 @@ public final class WebService : NSObject, ObservableObject
         self.result = json
         let data = json.data(using: .utf8)!
         let _decoded = try! JSONDecoder().decode(Data.self, from: data)
-        self.decodedEUR = _decoded
+        self.allApiData.append(_decoded)
         
         
     }
