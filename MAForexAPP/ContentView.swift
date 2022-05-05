@@ -57,64 +57,46 @@ let json = """
 public final class WebService : NSObject, ObservableObject
 {
     
-    @Published var refreshing1: Bool = false
-    @Published var refreshing2: Bool = false
-    @Published var refreshing3: Bool = false
+    var refreshingDict: [String: Bool] = ["EUR" : true, "USD" : true, "GBP": true, "CAD" : true, "AUD" : true, "NZD" : true, "CHF" : true]
+    @Published var refreshing: Bool = true
     let defaults = UserDefaults.standard
     var result = "no result"
-    var urlEUR: String = ""
-    var urlUSD: String = ""
-    var urlGBP: String = ""
     
-    @Published var allApiData: Array<Data>
+    @Published var allApiData: Array<Data> = []
     var newApiData: Array<Data> = []
     let EURSymbols = "USD,JPY,GBP,AUD,CAD,NZD,CHF,HKD"
     let USDSymbols =  "JPY,CAD,CHF"
     let GBPSymbols = "USD,JPY,AUD,CAD,CHF,HKD"
+    let CADSymbols = "JPY,CHF,HKD"
     
-    public enum Base
-    {
-        case EUR, USD, GBP
-    }
+    let BaseSymbols: [String] = ["EUR","USD","GBP","CAD","AUD", "NZD", "CHF"]
+    // base pairs which should be supported =
+    // EUR / USD / GBP / CAD / AUD / NZD / CHF / ZAR? / SGD?
+    
     
     public override init()
     {
-        self.refreshing1 = true
-        self.refreshing2 = true
-        self.refreshing3 = true
-        
-        
-        self.allApiData = []
         super.init()
-        urlUSD = "https://api.apilayer.com/fixer/fluctuation?symbols=" + self.USDSymbols + "&base=USD"
-        urlEUR = "https://api.apilayer.com/fixer/fluctuation?symbols=" + self.EURSymbols + "&base=EUR"
-        urlGBP = "https://api.apilayer.com/fixer/fluctuation?symbols=" + self.GBPSymbols + "&base=GBP"
+        self.allApiData = []
         
-        let _eur = defaults.string(forKey: "EURData")
-        if (_eur != nil)
+        for base in BaseSymbols
         {
-            let data = _eur!.data(using: .utf8)!
-            let _decoded = try! JSONDecoder().decode(Data.self, from: data)
-            self.allApiData.append(_decoded)
-        }
-        let _gbp = defaults.string(forKey: "GBPData")
-        if (_gbp != nil)
-        {
-            let data = _gbp!.data(using: .utf8)!
-            let _decoded = try! JSONDecoder().decode(Data.self, from: data)
-            self.allApiData.append(_decoded)
-        }
-        let _usd = defaults.string(forKey: "USDData")
-        if(_usd != nil)
-        {
-            let data = _usd!.data(using: .utf8)!
-            let _decoded = try! JSONDecoder().decode(Data.self, from: data)
-            self.allApiData.append(_decoded)
+            let _url = "https://api.apilayer.com/fixer/fluctuation?&base=" + base
+            let _saved = defaults.string(forKey: base + "Data")
+            if(_saved != nil)
+            {
+                let data = _saved!.data(using: .utf8)!
+                let _decoded = try? JSONDecoder().decode(Data.self, from: data)
+                if(_decoded != nil)
+                {
+                    self.allApiData.append(_decoded!)
+                }
+            }
+            MakeDataRequest(url: _url, base: base)
+            
         }
         SetKeys()
-        MakeDataRequest(url: urlEUR, base: Base.EUR)
-        MakeDataRequest(url: urlUSD, base: Base.USD)
-        MakeDataRequest(url: urlGBP, base: Base.GBP)
+        
     }
     
     private func SetKeys()
@@ -137,16 +119,25 @@ public final class WebService : NSObject, ObservableObject
     public func RefreshData()
     {
         self.newApiData = []
-        self.refreshing1 = true
-        self.refreshing2 = true
-        self.refreshing3 = true
-        MakeDataRequest(url: urlEUR, base: Base.EUR)
-        MakeDataRequest(url: urlUSD, base: Base.USD)
-        MakeDataRequest(url: urlGBP, base: Base.GBP)
+        
+        for key in self.refreshingDict.keys
+        {
+            
+            self.refreshingDict[key] = true
+        }
+        refreshing = true
+        for base in BaseSymbols
+        {
+            let _url = "https://api.apilayer.com/fixer/fluctuation?&base=" + base
+            MakeDataRequest(url: _url, base: base)
+            
+        }
+        
+        
         
     }
     
-    public func MakeDataRequest(url: String, base: Base)
+    public func MakeDataRequest(url: String, base: String)
     {
         var request = URLRequest(url: URL(string: url)!,timeoutInterval: Double.infinity)
         
@@ -162,59 +153,49 @@ public final class WebService : NSObject, ObservableObject
           }
             
             self.result = String(data: data, encoding: .utf8)!
+            print(self.result)
             let _data = try? JSONDecoder().decode(Data.self, from: data)
             if(_data != nil)
             {
-                self.newApiData.append(_data!)
+                
+                if (_data!.success != nil && _data!.success!)
+                {
+                    self.defaults.set(self.result, forKey:  base+"Data")
+                    self.newApiData.append(_data!)
+                    
+                }
+                
             }
-            switch (base)
+            
+            
+                
+            self.refreshingDict[base] = false
+            
+            var _refresh = false
+            for refresh in self.refreshingDict
             {
-            case Base.EUR:
-                do {
-                    
-                    DispatchQueue.main.async
-                    {
-                        self.refreshing1 = false
-                    }
-                    if (_data!.success != nil && _data!.success!)
-                    {
-                        self.defaults.set(self.result, forKey: "EURData")
-                    }
-                    
-                }
-            case Base.USD:
-                do {
-                    DispatchQueue.main.async
-                    {
-                        self.refreshing2 = false
-                    }
-                    if (_data!.success != nil && _data!.success!)
-                    {
-                        self.defaults.set(self.result, forKey: "USDData")
-                    }
-                    
-                }
-            case Base.GBP:
-                do{
-                    DispatchQueue.main.async
-                    {
-                        self.refreshing3 = false
-                    }
-                    if (_data!.success != nil && _data!.success!)
-                    {
-                        self.defaults.set(self.result, forKey: "GBPData")
-                    }
+                if(refresh.value)
+                {
+                   _refresh = true
                 }
             }
-            if(!self.refreshing1 && !self.refreshing2 && !self.refreshing3)
+            
+            if (!_refresh)
             {
                 DispatchQueue.main.async
                 {
-                    self.allApiData = self.newApiData
+                    if (!self.newApiData.isEmpty)
+                    {
+                        self.allApiData = self.newApiData
+                        
+                    }
+                    
+                    self.refreshing = _refresh
                 }
                 self.newApiData = []
                 self.SetKeys()
             }
+            
             
             
         }
@@ -275,7 +256,9 @@ struct ContentView: View {
         
         VStack
         {
-            if(!service.refreshing1 && !service.refreshing2 && !service.refreshing3)
+            
+            
+            if(!service.refreshing)
                {
             Text("Refresh").onTapGesture {
                 self.service.RefreshData()
