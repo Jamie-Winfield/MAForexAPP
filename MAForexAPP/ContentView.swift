@@ -52,17 +52,21 @@ let json = """
 }
 """
 
-public final class WebService : NSObject
+public final class WebService : NSObject, ObservableObject
 {
     var semaphore = DispatchSemaphore(value: 0)
+    
+    @Published var refreshing1: Bool = false
+    @Published var refreshing2: Bool = false
+    @Published var refreshing3: Bool = false
     let defaults = UserDefaults.standard
     var result = "no result"
     var urlEUR: String = ""
     var urlUSD: String = ""
     var urlGBP: String = ""
-    var decodedEUR: Data?
-    var decodedUSD: Data?
-    var decodedGBP: Data?
+    @Published var decodedEUR: Data?
+    @Published var decodedUSD: Data?
+    @Published var decodedGBP: Data?
     let EURSymbols = "USD,JPY,GBP,AUD,CAD,NZD,CHF,HKD"
     let USDSymbols =  "JPY,CAD,CHF"
     let GBPSymbols = "USD,JPY,AUD,CAD,CHF,HKD"
@@ -74,6 +78,9 @@ public final class WebService : NSObject
     
     public override init()
     {
+        self.refreshing1 = true
+        self.refreshing2 = true
+        self.refreshing3 = true
         super.init()
         urlUSD = "https://api.apilayer.com/fixer/fluctuation?symbols=" + self.USDSymbols + "&base=USD"
         urlEUR = "https://api.apilayer.com/fixer/fluctuation?symbols=" + self.EURSymbols + "&base=EUR"
@@ -103,7 +110,17 @@ public final class WebService : NSObject
         MakeDataRequest(url: urlEUR, base: Base.EUR)
         MakeDataRequest(url: urlUSD, base: Base.USD)
         MakeDataRequest(url: urlGBP, base: Base.GBP)
-        SetData()
+    }
+    
+    public func RefreshData()
+    {
+        self.refreshing1 = true
+        self.refreshing2 = true
+        self.refreshing3 = true
+        MakeDataRequest(url: urlEUR, base: Base.EUR)
+        MakeDataRequest(url: urlUSD, base: Base.USD)
+        MakeDataRequest(url: urlGBP, base: Base.GBP)
+        
     }
     
     public func MakeDataRequest(url: String, base: Base)
@@ -128,9 +145,16 @@ public final class WebService : NSObject
             case Base.EUR:
                 do {
                     let _eur = try? JSONDecoder().decode(Data.self, from: data)
+                    DispatchQueue.main.async
+                    {
+                        self.refreshing1 = false
+                    }
                     if (_eur!.success != nil && _eur!.success!)
                     {
-                        self.decodedEUR = _eur
+                        DispatchQueue.main.async
+                        {
+                            self.decodedEUR = _eur
+                        }
                         self.defaults.set(self.result, forKey: "EURData")
                     }
                     
@@ -138,9 +162,16 @@ public final class WebService : NSObject
             case Base.USD:
                 do {
                     let _usd = try? JSONDecoder().decode(Data.self, from: data)
+                    DispatchQueue.main.async
+                    {
+                        self.refreshing2 = false
+                    }
                     if (_usd!.success != nil && _usd!.success!)
                     {
-                        self.decodedUSD = _usd
+                        DispatchQueue.main.async
+                        {
+                            self.decodedUSD = _usd
+                        }
                         self.defaults.set(self.result, forKey: "USDData")
                     }
                     
@@ -148,9 +179,16 @@ public final class WebService : NSObject
             case Base.GBP:
                 do{
                     let _gbp = try? JSONDecoder().decode(Data.self, from: data)
+                    DispatchQueue.main.async
+                    {
+                        self.refreshing3 = false
+                    }
                     if (_gbp!.success != nil && _gbp!.success!)
                     {
-                        self.decodedGBP = _gbp
+                        DispatchQueue.main.async
+                        {
+                            self.decodedGBP = _gbp
+                        }
                         self.defaults.set(self.result, forKey: "GBPData")
                     }
                 }
@@ -161,8 +199,8 @@ public final class WebService : NSObject
         }
         
         task.resume()
-        semaphore.wait()
-        task.cancel()
+        //semaphore.wait()
+        //task.cancel()
     }
     
     public func SetData()
@@ -212,10 +250,26 @@ struct Row: View{
 }
 
 struct ContentView: View {
-    let service = WebService()
+    @ObservedObject var service = WebService()
+    
     var body: some View {
         
-        
+        VStack
+        {
+            if(!service.refreshing1 && !service.refreshing2 && !service.refreshing3)
+               {
+            Text("Refresh").onTapGesture {
+                self.service.RefreshData()
+            }.padding()
+            }
+            else
+            {
+                HStack
+                {
+                    Text("Refreshing").padding()
+                    ProgressView()
+                }
+            }
         List
         {
             let keysEUR = ["USD","JPY","GBP","AUD","CAD","NZD","CHF","HKD"]
@@ -243,6 +297,7 @@ struct ContentView: View {
         
             }
             
+        }
         }
         
         
