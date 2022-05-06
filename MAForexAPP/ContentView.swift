@@ -184,16 +184,16 @@ public final class WebService : NSObject, ObservableObject
             {
                 DispatchQueue.main.async
                 {
-                    if (!self.newApiData.isEmpty)
+                    if (self.newApiData.isEmpty == false)
                     {
                         self.allApiData = self.newApiData
                         
                     }
-                    
+                    self.newApiData = []
+                    self.SetKeys()
                     self.refreshing = _refresh
                 }
-                self.newApiData = []
-                self.SetKeys()
+                
             }
             
             
