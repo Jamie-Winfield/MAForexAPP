@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BB17FDEE2825BEEA00545C1E /* SwiftUICharts in Frameworks */ = {isa = PBXBuildFile; productRef = BB17FDED2825BEEA00545C1E /* SwiftUICharts */; };
 		BBC4660B2821943F00B3870F /* MAForexAPPApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC4660A2821943F00B3870F /* MAForexAPPApp.swift */; };
 		BBC4660D2821943F00B3870F /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC4660C2821943F00B3870F /* ContentView.swift */; };
 		BBC4660F2821944100B3870F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BBC4660E2821944100B3870F /* Assets.xcassets */; };
@@ -26,6 +27,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BB17FDEE2825BEEA00545C1E /* SwiftUICharts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -83,6 +85,9 @@
 			dependencies = (
 			);
 			name = MAForexAPP;
+			packageProductDependencies = (
+				BB17FDED2825BEEA00545C1E /* SwiftUICharts */,
+			);
 			productName = MAForexAPP;
 			productReference = BBC466072821943F00B3870F /* MAForexAPP.app */;
 			productType = "com.apple.product-type.application";
@@ -111,6 +116,9 @@
 				Base,
 			);
 			mainGroup = BBC465FE2821943F00B3870F;
+			packageReferences = (
+				BB17FDEC2825BEEA00545C1E /* XCRemoteSwiftPackageReference "ChartView" */,
+			);
 			productRefGroup = BBC466082821943F00B3870F /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -339,6 +347,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		BB17FDEC2825BEEA00545C1E /* XCRemoteSwiftPackageReference "ChartView" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/AppPear/ChartView";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		BB17FDED2825BEEA00545C1E /* SwiftUICharts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BB17FDEC2825BEEA00545C1E /* XCRemoteSwiftPackageReference "ChartView" */;
+			productName = SwiftUICharts;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = BBC465FF2821943F00B3870F /* Project object */;
 }
