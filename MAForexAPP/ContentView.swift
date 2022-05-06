@@ -68,8 +68,12 @@ public final class WebService : NSObject, ObservableObject
     let USDSymbols =  "JPY,CAD,CHF"
     let GBPSymbols = "USD,JPY,AUD,CAD,CHF,HKD"
     let CADSymbols = "JPY,CHF,HKD"
+    let AUDSymbols = "USD,,JPY,CAD,CHF,NZD,HKD"
+    let NZDSymbols = "USD,JPY,CAD,CHF,HKD"
+    let CHFSymbols = "JPY,HKD"
     
     let BaseSymbols: [String] = ["EUR","USD","GBP","CAD","AUD", "NZD", "CHF"]
+    var QuoteSymbols: [String: String] = [:]
     // base pairs which should be supported =
     // EUR / USD / GBP / CAD / AUD / NZD / CHF / ZAR? / SGD?
     
@@ -77,11 +81,13 @@ public final class WebService : NSObject, ObservableObject
     public override init()
     {
         super.init()
+        self.QuoteSymbols = ["EUR": EURSymbols, "USD": USDSymbols, "GBP": GBPSymbols, "CAD": CADSymbols, "AUD": AUDSymbols, "NZD": NZDSymbols, "CHF": CHFSymbols]
+        
         self.allApiData = []
         
         for base in BaseSymbols
         {
-            let _url = "https://api.apilayer.com/fixer/fluctuation?&base=" + base
+            let _url = "https://api.apilayer.com/fixer/fluctuation?&symbols=" + QuoteSymbols[base]! + "&base=" + base
             let _saved = defaults.string(forKey: base + "Data")
             if(_saved != nil)
             {
@@ -128,7 +134,7 @@ public final class WebService : NSObject, ObservableObject
         refreshing = true
         for base in BaseSymbols
         {
-            let _url = "https://api.apilayer.com/fixer/fluctuation?&base=" + base
+            let _url = "https://api.apilayer.com/fixer/fluctuation?&symbols=" + QuoteSymbols[base]! + "&base=" + base
             MakeDataRequest(url: _url, base: base)
             
         }
@@ -283,29 +289,6 @@ struct ContentView: View {
                     }
                 }
             }
-             /*
-            ForEach(keysEUR, id: \.self) { key in
-                if(service.decodedEUR != nil && service.decodedEUR!.rates![key] != nil)
-                {
-                    Row(data: service.decodedEUR!, key: key)
-                }
-        
-            }
-            ForEach(keysUSD, id: \.self) { key in
-                if(service.decodedUSD != nil && service.decodedUSD!.rates![key] != nil )
-                {
-                    Row(data: service.decodedUSD!, key: key)
-                }
-        
-            }
-            ForEach(keysGBP, id: \.self) { key in
-                if(service.decodedGBP != nil && service.decodedGBP!.rates![key] != nil)
-                {
-                    Row(data: service.decodedGBP!, key: key)
-                }
-        
-            }
-              */
             
         }
         }
