@@ -189,13 +189,18 @@ public final class WebService : NSObject, ObservableObject
                     self.timeseriesData[index].dates!.append(_date)
                     
                 }
-                for _key in self.timeseriesData[index].rates![GetDate(day: 0)]!.keys
+                
+                for _key in self.timeseriesData[index].rates![self.timeseriesData[index].dates![0]]!.keys
                 {
                     self.timeseriesData[index].keys!.append(_key)
                     var _data: [Double] = []
                     for i in -30...0
                     {
-                        _data.append(self.timeseriesData[index].rates![GetDate(day: i)]![_key]!)
+                        if(self.timeseriesData[index].rates![GetDate(day: i)]?[_key] != nil )
+                        {
+                            _data.append(self.timeseriesData[index].rates![GetDate(day: i)]![_key]!)
+                        }
+                        
                     }
                     self.timeseriesData[index].data![_key] = _data
                     //dump(self.timeseriesData[index].data![_key]!)
