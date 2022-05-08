@@ -43,6 +43,7 @@ public struct TimeSeries: Decodable
 }
 
 
+
 let json = """
 {
     "base": "EUR",
@@ -184,9 +185,13 @@ public final class WebService : NSObject, ObservableObject
                 self.timeseriesData[index].keys = []
                 self.timeseriesData[index].data = [:]
                 
-                for _date in self.timeseriesData[index].rates!.keys
+                
+                for i in -30...0
                 {
-                    self.timeseriesData[index].dates!.append(_date)
+                    if (self.timeseriesData[index].rates![GetDate(day: i)] != nil)
+                    {
+                        self.timeseriesData[index].dates!.append(GetDate(day: i))
+                    }
                     
                 }
                 
@@ -199,6 +204,7 @@ public final class WebService : NSObject, ObservableObject
                         if(self.timeseriesData[index].rates![GetDate(day: i)]?[_key] != nil )
                         {
                             _data.append(self.timeseriesData[index].rates![GetDate(day: i)]![_key]!)
+                            
                         }
                         
                     }
@@ -507,6 +513,8 @@ struct ContentView: View {
                     ProgressView()
                 }
             }
+            
+            
             NavigationView
             {
                 List
@@ -516,8 +524,11 @@ struct ContentView: View {
                         if(service.allApiData[index].keys != nil)
                         {
                             ForEach(service.allApiData[index].keys!, id: \.self) {key in
+                                
                                 let base = service.allApiData[index].base!
-                                NavigationLink(destination: LineView(data: service.timeseriesDataDict[base]!.data![key]!, title: base + " / " + key, valueSpecifier: "%.4f"))
+                                
+                                
+                                NavigationLink(destination: ExpandedView(_index: index, _key: key, _base: base, _service: service))
                                 {
                                     Row(data: service.allApiData[index], key: key)
                                 }
@@ -533,9 +544,79 @@ struct ContentView: View {
     }
 }
 
+struct ExpandedView : View
+{
+    var index: Int
+    var key: String
+    var service: WebService
+    var base: String
+    init(_index: Int, _key: String, _base: String, _service: WebService)
+    {
+        index = _index
+        key = _key
+        service = _service
+        base = _base
+    }
+    
+    var body: some View
+    {
+        VStack
+        {
+            LineView(data: service.timeseriesDataDict[base]!.data![key]!, title: base + "/" + key, legend: "Last 30 Days", valueSpecifier: "%.4f")
+            Row(data: service.allApiData[index], key: key)
+            
+        }
+    }
+}
+
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         
         ContentView()
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

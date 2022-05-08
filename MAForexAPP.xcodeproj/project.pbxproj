@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		BB17FDEE2825BEEA00545C1E /* SwiftUICharts in Frameworks */ = {isa = PBXBuildFile; productRef = BB17FDED2825BEEA00545C1E /* SwiftUICharts */; };
+		BB41235E28286F0700807150 /* Charts in Frameworks */ = {isa = PBXBuildFile; productRef = BB41235D28286F0700807150 /* Charts */; };
 		BBC4660B2821943F00B3870F /* MAForexAPPApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC4660A2821943F00B3870F /* MAForexAPPApp.swift */; };
 		BBC4660D2821943F00B3870F /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC4660C2821943F00B3870F /* ContentView.swift */; };
 		BBC4660F2821944100B3870F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BBC4660E2821944100B3870F /* Assets.xcassets */; };
@@ -28,6 +29,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BB17FDEE2825BEEA00545C1E /* SwiftUICharts in Frameworks */,
+				BB41235E28286F0700807150 /* Charts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -87,6 +89,7 @@
 			name = MAForexAPP;
 			packageProductDependencies = (
 				BB17FDED2825BEEA00545C1E /* SwiftUICharts */,
+				BB41235D28286F0700807150 /* Charts */,
 			);
 			productName = MAForexAPP;
 			productReference = BBC466072821943F00B3870F /* MAForexAPP.app */;
@@ -118,6 +121,7 @@
 			mainGroup = BBC465FE2821943F00B3870F;
 			packageReferences = (
 				BB17FDEC2825BEEA00545C1E /* XCRemoteSwiftPackageReference "ChartView" */,
+				BB41235C28286F0700807150 /* XCRemoteSwiftPackageReference "Charts" */,
 			);
 			productRefGroup = BBC466082821943F00B3870F /* Products */;
 			projectDirPath = "";
@@ -353,8 +357,16 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/AppPear/ChartView";
 			requirement = {
+				kind = exactVersion;
+				version = 1.5.5;
+			};
+		};
+		BB41235C28286F0700807150 /* XCRemoteSwiftPackageReference "Charts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/danielgindi/Charts";
+			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
+				minimumVersion = 3.0.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -364,6 +376,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = BB17FDEC2825BEEA00545C1E /* XCRemoteSwiftPackageReference "ChartView" */;
 			productName = SwiftUICharts;
+		};
+		BB41235D28286F0700807150 /* Charts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BB41235C28286F0700807150 /* XCRemoteSwiftPackageReference "Charts" */;
+			productName = Charts;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
