@@ -79,6 +79,48 @@ public func GetDate(day: Int) -> String
     formatter.dateFormat = "yyyy-MM-dd"
     return formatter.string(from: date)
 }
+
+public struct ForexPair: Codable
+{
+    var base: String
+    var quote: String
+    
+    init(_base: String, _quote: String) {
+        base = _base
+        quote = _quote
+    }
+}
+
+public struct PairData
+{
+    var base: String
+    var quote: String
+    var start_rate: Double
+    var end_rate: Double
+    var change: Double
+    var change_pct: Double
+    var rates: [String: Rates]
+    
+    init(_base: String, _quote: String, _start_rate: Double, _end_rate: Double, _change: Double, _change_pct: Double)
+    {
+        base = _base
+        quote = _quote
+        start_rate = _start_rate
+        end_rate = _end_rate
+        change = _change
+        change_pct = _change_pct
+        let _rate: Rates = Rates(start_rate: start_rate, end_rate: end_rate, change: change, change_pct: change_pct)
+        rates = [:]
+        
+        rates[_quote] = _rate
+    }
+}
+
+public struct FavForexPairs: Codable
+{
+    var pairs: [ForexPair]?
+}
+
 public final class WebService : NSObject, ObservableObject
 {
     
@@ -92,6 +134,9 @@ public final class WebService : NSObject, ObservableObject
     let nodata: Bool = false
     
     @Published var allApiData: Array<Data> = []
+    @Published var favApiData: Array<PairData> = []
+    var favPairs: Array<ForexPair> = []
+    
     var newApiData: Array<Data> = []
     
     @Published var timeseriesData: Array<TimeSeries> = []
@@ -116,6 +161,34 @@ public final class WebService : NSObject, ObservableObject
         case FLUCTUATION, TIMESERIES
     }
     
+    
+    public func AddFavPair(_pair: ForexPair)
+    {
+        for pair in favPairs
+        {
+            if (pair.base == _pair.base && pair.quote == _pair.quote)
+            {
+                // already holds fav pair
+                return
+            }
+        }
+        favPairs.append(_pair)
+        for _data in allApiData
+        {
+            if (_data.base == _pair.base)
+            {
+                for _quote in _data.keys!
+                {
+                    if (_quote == _pair.quote)
+                    {
+                        let _forexdata = PairData(_base: _data.base!, _quote: _quote, _start_rate: _data.rates![_quote]!.start_rate!, _end_rate: _data.rates![_quote]!.end_rate!, _change: _data.rates![_quote]!.change!, _change_pct: _data.rates![_quote]!.change_pct!)
+                        favApiData.append(_forexdata)
+                        return
+                    }
+                }
+            }
+        }
+    }
     
     public override init()
     {
@@ -166,9 +239,22 @@ public final class WebService : NSObject, ObservableObject
             }
             
         }
+        
+        let _saved = self.defaults.string(forKey: "FavPairs")
+        if(_saved != nil)
+        {
+            let data = _saved!.data(using: .utf8)!
+            let _decoded = try? JSONDecoder().decode(FavForexPairs.self, from: data)
+            if (_decoded != nil)
+            {
+                for _pair in _decoded!.pairs!
+                {
+                    self.favPairs.append(_pair)
+                }
+            }
+        }
         SetKeys()
         SetDates()
-        
     }
     
     
@@ -233,6 +319,20 @@ public final class WebService : NSObject, ObservableObject
                     self.allApiData[index].keys!.append(_key)
                 }
             }
+            
+            let _favpairs = self.favPairs
+            self.favPairs = []
+            self.favApiData = []
+            for _pair in _favpairs
+            {
+                self.AddFavPair(_pair: _pair)
+            }
+            let _encoded = try? JSONEncoder().encode(self.favPairs)
+            if (_encoded != nil)
+            {
+                self.defaults.set(_encoded, forKey: "FavPairs")
+            }
+            
         }
     }
     
@@ -324,6 +424,7 @@ public final class WebService : NSObject, ObservableObject
                             self.newApiData = []
                             self.SetKeys()
                             self.refreshing = _refresh
+                            
                         }
                         
                     }
@@ -387,34 +488,42 @@ public final class WebService : NSObject, ObservableObject
 }
 
 struct Row: View{
-    var data: Data
+    var data: PairData
     var color = Color.green
     var key: String
+    var service: WebService
     
-    init(data: Data, key: String)
+    init(data: PairData, key: String, service: WebService)
     {
         self.data = data
         self.key = key
+        self.service = service
         
-        if(data.rates![key]!.change! < 0)
+        if(data.rates[key]!.change! < 0)
         {
             color = Color.red
         }
     }
+    
+   
 
     var body: some View
     {
         HStack
         {
-            Text(data.base! + " / " + key).padding(1)
-            Text("Current \n " + (String(round(data.rates![key]!.end_rate! * 1000) / 1000)))
+            Text(data.base + " / " + key).padding(1)
+            Text("Current \n " + (String(round(data.rates[key]!.end_rate! * 1000) / 1000)))
                 .padding(1)
-            Text("Change \n" + (String(data.rates![key]!.change!)))
+            Text("Change \n" + (String(data.rates[key]!.change!)))
                 .padding(1)
                 .foregroundColor(color)
-            Text("Change % \n" + String(round(data.rates![key]!.change_pct! * 100) / 100))
+            Text("Change % \n" + String(round(data.rates[key]!.change_pct! * 100) / 100))
                 .padding(1)
             .foregroundColor(color)
+            Text("Favourite").onTapGesture{
+                service.AddFavPair(_pair: ForexPair(_base: data.base, _quote: key))
+                
+            }
             
         }
         
@@ -490,6 +599,42 @@ struct ChartAreaView: View
     }
 }
 
+struct FavouriteView: View{
+    
+    var service: WebService
+    
+    init(_service: WebService) {
+        service = _service
+    }
+    
+    var body: some View
+    {
+        NavigationView
+        {
+            List
+            {
+                ForEach(service.favApiData.indices, id: \.self)
+                { index in
+                    if(service.favApiData[index] != nil)
+                    {
+                        
+                            
+                            let base = service.favApiData[index].base
+                            let key = service.favApiData[index].quote
+                        
+                            NavigationLink(destination: ExpandedView(_index: index, _key: key , _base: base, _service: service))
+                            {
+                                Row(data: service.favApiData[index], key: key, service: service)
+                            }
+                        
+                    }
+                }
+                
+            }
+        }.navigationTitle("Favourites").navigationViewStyle(StackNavigationViewStyle())
+    }
+}
+
 struct ContentView: View {
     @ObservedObject var service = WebService()
     
@@ -517,9 +662,17 @@ struct ContentView: View {
             
             NavigationView
             {
+                VStack
+                {
+                    NavigationLink(destination: FavouriteView(_service: service))
+                    {
+                        Text("Favourites").padding()
+                    }
                 List
                 {
             
+                    
+                    
                     ForEach(service.allApiData.indices, id: \.self) { index in
                         if(service.allApiData[index].keys != nil)
                         {
@@ -530,14 +683,16 @@ struct ContentView: View {
                                 
                                 NavigationLink(destination: ExpandedView(_index: index, _key: key, _base: base, _service: service))
                                 {
-                                    Row(data: service.allApiData[index], key: key)
+                                    let _data: PairData = PairData(_base: base, _quote: key, _start_rate: service.allApiData[index].rates![key]!.start_rate!, _end_rate: service.allApiData[index].rates![key]!.end_rate!, _change: service.allApiData[index].rates![key]!.change!, _change_pct: service.allApiData[index].rates![key]!.change_pct!)
+                                    Row(data: _data, key: key, service: service)
                                 }
                             }
                         }
                     }
             
                 }
-            }.navigationTitle("Back")
+                }
+            }.navigationTitle("Back").navigationViewStyle(StackNavigationViewStyle())
         }
         
         
@@ -563,7 +718,8 @@ struct ExpandedView : View
         VStack
         {
             LineView(data: service.timeseriesDataDict[base]!.data![key]!, title: base + "/" + key, legend: "Last 30 Days", valueSpecifier: "%.4f")
-            Row(data: service.allApiData[index], key: key)
+            let _data: PairData = PairData(_base: base, _quote: key, _start_rate: service.allApiData[index].rates![key]!.start_rate!, _end_rate: service.allApiData[index].rates![key]!.end_rate!, _change: service.allApiData[index].rates![key]!.change!, _change_pct: service.allApiData[index].rates![key]!.change_pct!)
+            Row(data: _data, key: key, service: service)
             
         }
     }
