@@ -627,36 +627,43 @@ struct FavouriteView: View{
 struct ContentView: View {
     @ObservedObject var service = WebService()
     
+   
+    
     var body: some View {
         
-        VStack
-        {
+        
             
             
-            if(!service.refreshing)
-               {
-            Button("Refresh") {
-                self.service.RefreshData()
-            }.padding()
-            }
-            else
-            {
-                HStack
-                {
-                    Text("Refreshing").padding()
-                    ProgressView()
-                }
-            }
             
+        
             
             NavigationView
             {
                 VStack
                 {
+                    
+                    if(!service.refreshing)
+                       {
+                        Button("Refresh")
+                        {
+                        self.service.RefreshData()
+                        }
+                    }
+                    else
+                    {
+                        HStack
+                        {
+                            Text("Refreshing")
+                            ProgressView()
+                        }
+                    }
+                    
                     NavigationLink(destination: FavouriteView(_service: service))
                     {
                         Text("Favourites").padding()
                     }
+                    
+                    
                 List
                 {
             
@@ -680,12 +687,14 @@ struct ContentView: View {
                     }
             
                 }
-                }
-            }.navigationTitle("Back").navigationViewStyle(StackNavigationViewStyle())
+                }.navigationBarTitleDisplayMode(.inline)
+                
+            }.navigationViewStyle(StackNavigationViewStyle())
+        
         }
         
         
-    }
+    
 }
 
 struct ExpandedView : View

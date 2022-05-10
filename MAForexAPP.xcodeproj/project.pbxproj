@@ -9,18 +9,18 @@
 /* Begin PBXBuildFile section */
 		BB17FDEE2825BEEA00545C1E /* SwiftUICharts in Frameworks */ = {isa = PBXBuildFile; productRef = BB17FDED2825BEEA00545C1E /* SwiftUICharts */; };
 		BB41235E28286F0700807150 /* Charts in Frameworks */ = {isa = PBXBuildFile; productRef = BB41235D28286F0700807150 /* Charts */; };
-		BBC4660B2821943F00B3870F /* MAForexAPPApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC4660A2821943F00B3870F /* MAForexAPPApp.swift */; };
 		BBC4660D2821943F00B3870F /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC4660C2821943F00B3870F /* ContentView.swift */; };
 		BBC4660F2821944100B3870F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BBC4660E2821944100B3870F /* Assets.xcassets */; };
 		BBC466122821944100B3870F /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BBC466112821944100B3870F /* Preview Assets.xcassets */; };
+		BBF29B23282AFFB000F60BC1 /* MAForexAPP.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBF29B22282AFFB000F60BC1 /* MAForexAPP.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		BBC466072821943F00B3870F /* MAForexAPP.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MAForexAPP.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		BBC4660A2821943F00B3870F /* MAForexAPPApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MAForexAPPApp.swift; sourceTree = "<group>"; };
 		BBC4660C2821943F00B3870F /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		BBC4660E2821944100B3870F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BBC466112821944100B3870F /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		BBF29B22282AFFB000F60BC1 /* MAForexAPP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MAForexAPP.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -55,10 +55,10 @@
 		BBC466092821943F00B3870F /* MAForexAPP */ = {
 			isa = PBXGroup;
 			children = (
-				BBC4660A2821943F00B3870F /* MAForexAPPApp.swift */,
 				BBC4660C2821943F00B3870F /* ContentView.swift */,
 				BBC4660E2821944100B3870F /* Assets.xcassets */,
 				BBC466102821944100B3870F /* Preview Content */,
+				BBF29B22282AFFB000F60BC1 /* MAForexAPP.swift */,
 			);
 			path = MAForexAPP;
 			sourceTree = "<group>";
@@ -149,8 +149,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BBF29B23282AFFB000F60BC1 /* MAForexAPP.swift in Sources */,
 				BBC4660D2821943F00B3870F /* ContentView.swift in Sources */,
-				BBC4660B2821943F00B3870F /* MAForexAPPApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
