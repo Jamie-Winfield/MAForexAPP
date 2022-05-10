@@ -131,7 +131,7 @@ public final class WebService : NSObject, ObservableObject
     let defaults = UserDefaults.standard
     var result = "no result"
     
-    let nodata: Bool = false
+    let nodata: Bool = true
     
     @Published var allApiData: Array<Data> = []
     @Published var favApiData: Array<PairData> = []
@@ -164,30 +164,79 @@ public final class WebService : NSObject, ObservableObject
     
     public func AddFavPair(_pair: ForexPair)
     {
-        for pair in favPairs
+        DispatchQueue.main.async
         {
-            if (pair.base == _pair.base && pair.quote == _pair.quote)
+            for pair in self.favPairs
             {
-                // already holds fav pair
-                return
-            }
-        }
-        favPairs.append(_pair)
-        for _data in allApiData
-        {
-            if (_data.base == _pair.base)
-            {
-                for _quote in _data.keys!
+                if (pair.base == _pair.base && pair.quote == _pair.quote)
                 {
-                    if (_quote == _pair.quote)
+                    // already holds fav pair
+                    return
+                }
+            }
+            self.favPairs.append(_pair)
+        
+            let _encoded = try? JSONEncoder().encode(self.favPairs)
+            if (_encoded != nil)
+            {
+                self.defaults.set(_encoded, forKey: "FavPairs")
+            }
+        
+            for _data in self.allApiData
+            {
+                if (_data.base == _pair.base)
+                {
+                    for _quote in _data.keys!
                     {
-                        let _forexdata = PairData(_base: _data.base!, _quote: _quote, _start_rate: _data.rates![_quote]!.start_rate!, _end_rate: _data.rates![_quote]!.end_rate!, _change: _data.rates![_quote]!.change!, _change_pct: _data.rates![_quote]!.change_pct!)
-                        favApiData.append(_forexdata)
-                        return
+                        if (_quote == _pair.quote)
+                        {
+                            let _forexdata = PairData(_base: _data.base!, _quote: _quote, _start_rate: _data.rates![_quote]!.start_rate!, _end_rate: _data.rates![_quote]!.end_rate!, _change: _data.rates![_quote]!.change!, _change_pct: _data.rates![_quote]!.change_pct!)
+                            self.favApiData.append(_forexdata)
+                        
+                            return
+                        }
                     }
                 }
             }
         }
+    }
+    
+    public func RemoveFavPair(_pair: ForexPair)
+    {
+        DispatchQueue.main.async
+        {
+            
+        
+            for index in self.favPairs.indices
+            {
+                if(self.favPairs[index].base == _pair.base && self.favPairs[index].quote == _pair.quote)
+                {
+                    self.favPairs.remove(at: index)
+                    let tempPairs = self.favPairs
+                    self.favPairs = []
+                    self.favApiData = []
+                    for pair in tempPairs
+                    {
+                        self.AddFavPair(_pair: pair)
+                    }
+                
+                    return
+                }
+            }
+        }
+    }
+    
+    public func HasFavPair(_pair: ForexPair) -> Bool
+    {
+        for pair in favPairs
+        {
+            if (pair.base == _pair.base && pair.quote == _pair.quote)
+            {
+                return true
+            }
+        }
+        return false
+        
     }
     
     public override init()
@@ -326,11 +375,6 @@ public final class WebService : NSObject, ObservableObject
             for _pair in _favpairs
             {
                 self.AddFavPair(_pair: _pair)
-            }
-            let _encoded = try? JSONEncoder().encode(self.favPairs)
-            if (_encoded != nil)
-            {
-                self.defaults.set(_encoded, forKey: "FavPairs")
             }
             
         }
@@ -492,6 +536,7 @@ struct Row: View{
     var color = Color.green
     var key: String
     var service: WebService
+
     
     init(data: PairData, key: String, service: WebService)
     {
@@ -503,6 +548,8 @@ struct Row: View{
         {
             color = Color.red
         }
+        
+        
     }
     
    
@@ -512,18 +559,19 @@ struct Row: View{
         HStack
         {
             Text(data.base + " / " + key).padding(1)
+            
             Text("Current \n " + (String(round(data.rates[key]!.end_rate! * 1000) / 1000)))
                 .padding(1)
+            
             Text("Change \n" + (String(data.rates[key]!.change!)))
                 .padding(1)
                 .foregroundColor(color)
+            
             Text("Change % \n" + String(round(data.rates[key]!.change_pct! * 100) / 100))
                 .padding(1)
             .foregroundColor(color)
-            Text("Favourite").onTapGesture{
-                service.AddFavPair(_pair: ForexPair(_base: data.base, _quote: key))
-                
-            }
+            
+            
             
         }
         
@@ -609,29 +657,24 @@ struct FavouriteView: View{
     
     var body: some View
     {
-        NavigationView
-        {
             List
             {
                 ForEach(service.favApiData.indices, id: \.self)
                 { index in
-                    if(service.favApiData[index] != nil)
-                    {
                         
                             
-                            let base = service.favApiData[index].base
-                            let key = service.favApiData[index].quote
+                    let base = service.favApiData[index].base
+                    let key = service.favApiData[index].quote
                         
-                            NavigationLink(destination: ExpandedView(_index: index, _key: key , _base: base, _service: service))
-                            {
-                                Row(data: service.favApiData[index], key: key, service: service)
-                            }
-                        
+                    NavigationLink(destination: ExpandedView(_index: index, _key: key , _base: base, _service: service))
+                    {
+                        Row(data: service.favApiData[index], key: key, service: service)
                     }
+                        
+                    
                 }
                 
             }
-        }.navigationTitle("Favourites").navigationViewStyle(StackNavigationViewStyle())
     }
 }
 
@@ -646,7 +689,7 @@ struct ContentView: View {
             
             if(!service.refreshing)
                {
-            Text("Refresh").onTapGesture {
+            Button("Refresh") {
                 self.service.RefreshData()
             }.padding()
             }
@@ -705,18 +748,48 @@ struct ExpandedView : View
     var key: String
     var service: WebService
     var base: String
+    var pair: ForexPair
+    @State var fav: Bool = false
     init(_index: Int, _key: String, _base: String, _service: WebService)
     {
         index = _index
         key = _key
         service = _service
         base = _base
+        
+        pair = ForexPair(_base: base, _quote: key)
+        if(service.HasFavPair(_pair: pair))
+        {
+            //fav.toggle()
+        }
+        
+        
     }
+    
     
     var body: some View
     {
         VStack
         {
+            if(!service.HasFavPair(_pair: pair) && !fav)
+            {
+                Button("Favourite")
+                {
+                    service.AddFavPair(_pair: ForexPair(_base: base, _quote: key))
+                    fav.toggle()
+                
+                }
+            }
+            else
+            {
+                Button("Un-Favourite")
+                {
+                    service.RemoveFavPair(_pair: ForexPair(_base: base, _quote: key))
+                    fav.toggle()
+                
+                }
+                
+            }
             LineView(data: service.timeseriesDataDict[base]!.data![key]!, title: base + "/" + key, legend: "Last 30 Days", valueSpecifier: "%.4f")
             let _data: PairData = PairData(_base: base, _quote: key, _start_rate: service.allApiData[index].rates![key]!.start_rate!, _end_rate: service.allApiData[index].rates![key]!.end_rate!, _change: service.allApiData[index].rates![key]!.change!, _change_pct: service.allApiData[index].rates![key]!.change_pct!)
             Row(data: _data, key: key, service: service)
