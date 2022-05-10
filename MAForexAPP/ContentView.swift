@@ -118,7 +118,7 @@ public struct PairData
 
 public struct FavForexPairs: Codable
 {
-    var pairs: [ForexPair]?
+    var pairs: Array<ForexPair>?
 }
 
 public final class WebService : NSObject, ObservableObject
@@ -176,10 +176,25 @@ public final class WebService : NSObject, ObservableObject
             }
             self.favPairs.append(_pair)
         
-            let _encoded = try? JSONEncoder().encode(self.favPairs)
+            var _favforexpairs: FavForexPairs = FavForexPairs()
+            _favforexpairs.pairs = []
+            
+            for pair in self.favPairs
+            {
+                
+                _favforexpairs.pairs!.append(pair)
+                
+            }
+            let _encoded = try? JSONEncoder().encode(_favforexpairs)
+            
             if (_encoded != nil)
             {
-                self.defaults.set(_encoded, forKey: "FavPairs")
+                let _encodedString = String(data: _encoded!, encoding: .utf8)!
+                self.defaults.set(_encodedString, forKey: "FavPairs")
+            }
+            if let temp = self.defaults.string(forKey: "FavPairs")
+            {
+                print(temp)
             }
         
             for _data in self.allApiData
@@ -665,7 +680,7 @@ struct FavouriteView: View{
                             
                     let base = service.favApiData[index].base
                     let key = service.favApiData[index].quote
-                        
+                    
                     NavigationLink(destination: ExpandedView(_index: index, _key: key , _base: base, _service: service))
                     {
                         Row(data: service.favApiData[index], key: key, service: service)
@@ -760,7 +775,15 @@ struct ExpandedView : View
         pair = ForexPair(_base: base, _quote: key)
         if(service.HasFavPair(_pair: pair))
         {
-            //fav.toggle()
+            fav.toggle()
+            for _index in service.allApiData.indices
+            {
+                if(service.allApiData[_index].base == base)
+                {
+                    index = _index
+                    break
+                }
+            }
         }
         
         
