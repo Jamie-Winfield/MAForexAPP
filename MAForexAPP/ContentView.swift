@@ -131,7 +131,7 @@ public final class WebService : NSObject, ObservableObject
     let defaults = UserDefaults.standard
     var result = "no result"
     
-    let nodata: Bool = true
+    let nodata: Bool = false
     
     @Published var allApiData: Array<Data> = []
     @Published var favApiData: Array<PairData> = []
@@ -699,6 +699,12 @@ struct ContentView: View {
 
 struct ExpandedView : View
 {
+    @State var orientation = UIDevice.current.orientation
+    
+    let orientationChanged = NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)
+        .makeConnectable()
+        .autoconnect()
+    
     var index: Int
     var key: String
     var service: WebService
@@ -732,8 +738,12 @@ struct ExpandedView : View
     
     var body: some View
     {
+        Group
+        {
         VStack
         {
+            if(orientation.isPortrait)
+            {
             if(!service.HasFavPair(_pair: pair) && !fav)
             {
                 Button("Favourite")
@@ -753,10 +763,49 @@ struct ExpandedView : View
                 }
                 
             }
+            
+            
             LineView(data: service.timeseriesDataDict[base]!.data![key]!, title: base + "/" + key, legend: "Last 30 Days", valueSpecifier: "%.4f")
             let _data: PairData = PairData(_base: base, _quote: key, _start_rate: service.allApiData[index].rates![key]!.start_rate!, _end_rate: service.allApiData[index].rates![key]!.end_rate!, _change: service.allApiData[index].rates![key]!.change!, _change_pct: service.allApiData[index].rates![key]!.change_pct!)
+            Text("Tap and hold to see more detail")
             Row(data: _data, key: key, service: service)
+            }
+            else if(orientation.isLandscape)
+            {
+                LineView(data: service.timeseriesDataDict[base]!.data![key]!, title: base + "/" + key, legend: "Last 30 Days", valueSpecifier: "%.4f")
+                
+            }
+            else
+            {
+                if(!service.HasFavPair(_pair: pair) && !fav)
+                {
+                    Button("Favourite")
+                    {
+                        service.AddFavPair(_pair: ForexPair(_base: base, _quote: key))
+                        fav.toggle()
+                    
+                    }
+                }
+                else
+                {
+                    Button("Un-Favourite")
+                    {
+                        service.RemoveFavPair(_pair: ForexPair(_base: base, _quote: key))
+                        fav.toggle()
+                    
+                    }
+                    
+                }
+                
+                
+                LineView(data: service.timeseriesDataDict[base]!.data![key]!, title: base + "/" + key, legend: "Last 30 Days", valueSpecifier: "%.4f")
+                let _data: PairData = PairData(_base: base, _quote: key, _start_rate: service.allApiData[index].rates![key]!.start_rate!, _end_rate: service.allApiData[index].rates![key]!.end_rate!, _change: service.allApiData[index].rates![key]!.change!, _change_pct: service.allApiData[index].rates![key]!.change_pct!)
+                Text("Tap and hold to see more detail")
+                Row(data: _data, key: key, service: service)            }
             
+        }
+        }.onReceive(orientationChanged) { _ in
+            self.orientation = UIDevice.current.orientation
         }
     }
 }
