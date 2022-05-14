@@ -18,6 +18,9 @@ struct FavouriteView: View{
     
     var body: some View
     {
+        VStack
+        {
+            Text("Favourites").padding()
             List
             {
                 ForEach(service.favApiData.indices, id: \.self)
@@ -36,5 +39,6 @@ struct FavouriteView: View{
                 }
                 
             }
+        }
     }
 }
