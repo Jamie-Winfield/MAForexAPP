@@ -633,7 +633,7 @@ struct Row: View{
                 .foregroundColor(color)
             
             Text("Change % \n" + String(round(data.rates[key]!.change_pct! * 100) / 100))
-                .padding(1)
+                .padding(3)
             .foregroundColor(color)
             
             
@@ -683,7 +683,9 @@ struct ContentView: View {
         
         
             
+           
             
+        
             
         
             
@@ -691,7 +693,19 @@ struct ContentView: View {
             {
                 VStack
                 {
+                        
+                    HStack
+                    {
+                        
+                        
                     
+                        
+                        Spacer()
+                        Spacer()
+                        Spacer()
+                        Spacer()
+                    VStack
+                        {
                     if(!service.refreshing)
                     {
                         Button("Refresh")
@@ -712,6 +726,16 @@ struct ContentView: View {
                     NavigationLink(destination: FavouriteView(_service: service))
                     {
                         Text("Favourites").padding()
+                    }
+                        }.padding()
+                        
+                        
+                        Spacer()
+                        Image("logo")
+                            .resizable()
+                            .frame(width: 75, height: 75)
+                            .padding()
+                        
                     }
                     
                     
@@ -738,13 +762,17 @@ struct ContentView: View {
                     }
             
                 }
+                        
                 }.navigationBarTitleDisplayMode(.inline)
                     .alert(isPresented: $service.error)
                 {
                     Alert(title: Text("Error"), message: Text("Failed to Refresh"), dismissButton: .default(Text("OK")))
                 }
-                
+                    
             }.navigationViewStyle(StackNavigationViewStyle())
+            
+            
+        
         
         }
         
