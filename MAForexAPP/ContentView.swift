@@ -133,6 +133,8 @@ public final class WebService : NSObject, ObservableObject
     
     let nodata: Bool = false
     
+    @Published var error: Bool = false
+    
     @Published var allApiData: Array<Data> = []
     @Published var favApiData: Array<PairData> = []
     var favPairs: Array<ForexPair> = []
@@ -425,7 +427,7 @@ public final class WebService : NSObject, ObservableObject
     
     func MakeDataRequest(url: String, base: String, type: RequestType)
     {
-        var request = URLRequest(url: URL(string: url)!,timeoutInterval: Double.infinity)
+        var request = URLRequest(url: URL(string: url)!,timeoutInterval: 10)
         
         
         request.httpMethod = "GET"
@@ -435,12 +437,18 @@ public final class WebService : NSObject, ObservableObject
             data, response, error in
           guard let data = data else {
             print(String(describing: error))
+            
+              DispatchQueue.main.async {
+                  self.error = true
+              }
+            self.SetRefreshing(_key: base, _type: type)
             return
           }
             
             self.result = String(data: data, encoding: .utf8)!
             print(self.result)
             
+            var _error: Bool = false
             switch (type)
             {
             case .FLUCTUATION:
@@ -455,38 +463,21 @@ public final class WebService : NSObject, ObservableObject
                             self.newApiData.append(_data!)
                             
                         }
-                        
-                    }
-                    
-                    
-                        
-                    self.refreshingDict[base] = false
-                    
-                    var _refresh = false
-                    for refresh in self.refreshingDict
-                    {
-                        if(refresh.value)
+                        else
                         {
-                           _refresh = true
-                        }
-                    }
-                    
-                    if (!_refresh)
-                    {
-                        DispatchQueue.main.async
-                        {
-                            if (self.newApiData.isEmpty == false)
-                            {
-                                self.allApiData = self.newApiData
-                                
-                            }
-                            self.newApiData = []
-                            self.SetKeys()
-                            self.refreshing = _refresh
-                            
+                            _error = true
                         }
                         
                     }
+                    else
+                    {
+                        _error = true
+                    }
+                    
+                    
+                    
+                        
+                    
                     
                 }
             case .TIMESERIES:
@@ -501,38 +492,97 @@ public final class WebService : NSObject, ObservableObject
                             self.newTimeseriesData.append(_data!)
                             
                         }
-                    }
-                    
-                    self.refreshingDictTime[base] = false
-                    var _refresh = false
-                    
-                    for refresh in self.refreshingDictTime
-                    {
-                        if (refresh.value)
+                        else
                         {
-                            _refresh = true
+                            _error = true
                         }
                     }
-                    if(!_refresh)
+                    else
                     {
-                        
-                       
-                        DispatchQueue.main.async
-                        {
-                            if(self.newTimeseriesData.isEmpty == false)
-                            {
-                                self.timeseriesData = self.newTimeseriesData
-                                self.SetDates()
-                            }
-                            self.newTimeseriesData = []
-                            self.refreshingTime = false
-                        }
+                        _error = true
                     }
+                    
+                    
+                }
+            }
+            self.SetRefreshing(_key: base, _type: type)
+            DispatchQueue.main.async {
+                if (_error)
+                {
+                    self.error = _error
                 }
             }
         }
         
         task.resume()
+    }
+    
+    func SetRefreshing(_key: String, _type: RequestType)
+    {
+        switch (_type)
+        {
+        case .FLUCTUATION:
+            do {
+                
+                self.refreshingDict[_key] = false
+                
+                var _refresh = false
+                for refresh in self.refreshingDict
+                {
+                    if(refresh.value)
+                    {
+                       _refresh = true
+                    }
+                }
+                
+                if (!_refresh)
+                {
+                    DispatchQueue.main.async
+                    {
+                        if (self.newApiData.isEmpty == false)
+                        {
+                            self.allApiData = self.newApiData
+                            
+                        }
+                        self.newApiData = []
+                        self.SetKeys()
+                        self.refreshing = _refresh
+                        
+                    }
+                    
+                }
+                
+            }
+        case .TIMESERIES:
+            do{
+                self.refreshingDictTime[_key] = false
+                var _refresh = false
+                
+                for refresh in self.refreshingDictTime
+                {
+                    if (refresh.value)
+                    {
+                        _refresh = true
+                    }
+                }
+                if(!_refresh)
+                {
+                    
+                   
+                    DispatchQueue.main.async
+                    {
+                        if(self.newTimeseriesData.isEmpty == false)
+                        {
+                            self.timeseriesData = self.newTimeseriesData
+                            self.SetDates()
+                        }
+                        self.newTimeseriesData = []
+                        self.refreshingTime = false
+                    }
+                }
+                
+            }
+        }
     }
     
     public func SetData()
@@ -643,11 +693,12 @@ struct ContentView: View {
                 {
                     
                     if(!service.refreshing)
-                       {
+                    {
                         Button("Refresh")
                         {
                         self.service.RefreshData()
                         }
+                        
                     }
                     else
                     {
@@ -688,6 +739,10 @@ struct ContentView: View {
             
                 }
                 }.navigationBarTitleDisplayMode(.inline)
+                    .alert(isPresented: $service.error)
+                {
+                    Alert(title: Text("Error"), message: Text("Failed to Refresh"), dismissButton: .default(Text("OK")))
+                }
                 
             }.navigationViewStyle(StackNavigationViewStyle())
         
